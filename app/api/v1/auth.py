@@ -17,6 +17,7 @@ from app.core.security import (
     verify_token
 )
 from app.core.config import settings
+from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -151,7 +152,7 @@ async def refresh_token(
 
 @router.get("/me", response_model=dict)
 async def get_current_user_info(
-    current_user: User = Depends(lambda: __import__('app.api.dependencies', fromlist=['get_current_user']).get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Get current user information
