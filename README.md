@@ -73,14 +73,37 @@ This platform allows data scientists and ML engineers to deploy their trained mo
 
 ## 📚 Documentation
 
-Comprehensive documentation for understanding and explaining this project:
+### 🎓 Learning Resources (NEW!)
+
+**Complete beginner-friendly learning guides for all phases:**
+
+- **[📖 Learning Documentation Index](./docs/LEARNING_DOCUMENTATION_INDEX.md)** - ⭐ START HERE!
+- **[🗺️ Learning Roadmap](./docs/LEARNING_INDEX.md)** - Your complete learning path
+
+**Phase-by-Phase Guides (9 Complete Guides):**
+- **[🏗️ Phase 1: Setup & Infrastructure](./docs/PHASE_1_SETUP_GUIDE.md)** - Docker, PostgreSQL, Alembic
+- **[🔐 Phase 2: Authentication System](./docs/PHASE_2_AUTH_GUIDE.md)** - JWT, password hashing, protected routes
+- **[📦 Phase 3: Model Management](./docs/PHASE_3_MODEL_GUIDE.md)** - File uploads, versioning, CRUD (NEW!)
+- **[🔮 Phase 4: Prediction Engine](./docs/PHASE_4_PREDICTION_GUIDE.md)** - ML model loading, caching, predictions (NEW!)
+- **[📊 Phase 5: Logging & Monitoring](./docs/PHASE_5_LOGGING_GUIDE.md)** - Structured logging, middleware, analytics (NEW!)
+- **[🚀 Phase 6: Advanced Features](./docs/PHASE_6_ADVANCED_GUIDE.md)** - API keys, rate limiting, Redis, WebSockets (NEW!)
+- **[🧪 Phase 7: Testing & CI/CD](./docs/PHASE_7_TESTING_GUIDE.md)** - pytest, fixtures, GitHub Actions
+- **[🏭 Phase 8: Production Preparation](./docs/PHASE_8_PRODUCTION_GUIDE.md)** - Security, optimization, backups (NEW!)
+- **[🌐 Phase 9: Deployment](./docs/PHASE_9_DEPLOYMENT_GUIDE.md)** - Railway, Render, AWS, CI/CD (NEW!)
+
+### 📘 Technical Deep Dives
+
+- **[FastAPI Mastery](./docs/FASTAPI_MASTERY.md)** - Complete FastAPI guide
+- **[Pydantic & ORM Mastery](./docs/PYDANTIC_ORM_MASTERY.md)** - Data validation & SQLAlchemy
+- **[Docker Mastery](./docs/DOCKER_MASTERY.md)** - Containerization guide
+
+### 📋 System Documentation
 
 - **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System design and component breakdown
 - **[DATABASE_SCHEMA.md](./docs/DATABASE_SCHEMA.md)** - Database design and ERD
 - **[API_DESIGN.md](./docs/API_DESIGN.md)** - Complete API specifications
 - **[TECH_DECISIONS.md](./docs/TECH_DECISIONS.md)** - Technology choice justifications
 - **[INTERVIEW_PREP.md](./docs/INTERVIEW_PREP.md)** - Interview Q&A guide
-- **[docs/README.md](./docs/README.md)** - Documentation navigation guide
 
 ---
 
