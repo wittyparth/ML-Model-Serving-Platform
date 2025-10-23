@@ -1,7 +1,7 @@
 """
 User schemas for request and response validation
 """
-from pydantic_test import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -12,7 +12,7 @@ from uuid import UUID
 class UserCreate(BaseModel):
     """Schema for user registration"""
     email: EmailStr = Field(..., description="User email address")
-    password: str = Field(..., min_length=8, description="Password (min 8 characters)")
+    password: str = Field(..., min_length=8, max_length=72, description="Password (8-72 characters)")
     full_name: Optional[str] = Field(None, max_length=255, description="User's full name")
 
 

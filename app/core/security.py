@@ -10,8 +10,8 @@ from fastapi import HTTPException, status
 
 from app.core.config import settings
 
-# Password hashing context with bcrypt
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing context with bcrypt and argon2
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -38,6 +38,10 @@ def get_password_hash(password: str) -> str:
     Returns:
         Hashed password string
     """
+    # Ensure password is not too long for bcrypt (72 bytes max)
+    if len(password.encode('utf-8')) > 72:
+        raise ValueError("Password is too long (max 72 bytes)")
+    
     return pwd_context.hash(password)
 
 

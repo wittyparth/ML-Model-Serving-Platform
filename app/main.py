@@ -10,7 +10,15 @@ import time
 
 from app.core.config import settings
 from app.core.logging import setup_logging, get_logger
-from app.api.v1 import auth, models, predictions, users
+from app.core.middleware import (
+    RequestLoggingMiddleware,
+    ErrorTrackingMiddleware,
+    PerformanceMonitoringMiddleware,
+    RateLimitHeaderMiddleware
+)
+from app.api.v1 import auth, models, predictions, users, health, api_keys
+from app.db.base import Base
+from app.db.session import engine
 
 # Setup logging
 setup_logging()
@@ -35,16 +43,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# Request timing middleware
-@app.middleware("http")
-async def add_process_time_header(request: Request, call_next):
-    """Add response time header to all requests"""
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    return response
+# Add custom middleware (order matters!)
+app.add_middleware(ErrorTrackingMiddleware)
+app.add_middleware(PerformanceMonitoringMiddleware, slow_threshold_ms=1000)
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(RateLimitHeaderMiddleware)
 
 
 # Include routers
@@ -52,26 +55,11 @@ app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(models.router, prefix=settings.API_V1_PREFIX)
 app.include_router(predictions.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
+app.include_router(health.router, prefix=settings.API_V1_PREFIX)
+app.include_router(api_keys.router, prefix=settings.API_V1_PREFIX)
 
 
-# Health check endpoint
-@app.get("/health", tags=["System"])
-async def health_check():
-    """
-    Health check endpoint
-    
-    Returns system status and uptime
-    """
-    return {
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
-        "version": settings.VERSION,
-        "services": {
-            "database": "healthy",  # TODO: Add actual DB check
-            "cache": "healthy",     # TODO: Add actual Redis check
-            "storage": "healthy"    # TODO: Add actual storage check
-        }
-    }
+app.include_router(health.router, prefix=settings.API_V1_PREFIX)
 
 
 # Root endpoint
@@ -82,7 +70,7 @@ async def root():
         "name": settings.PROJECT_NAME,
         "version": settings.VERSION,
         "docs": f"{settings.API_V1_PREFIX}/docs",
-        "health": "/health"
+        "health": f"{settings.API_V1_PREFIX}/health"
     }
 
 
@@ -112,6 +100,10 @@ async def startup_event():
     """Run on application startup"""
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}")
     logger.info(f"API documentation available at {settings.API_V1_PREFIX}/docs")
+    
+    # Create database tables
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables created/verified")
 
 
 # Shutdown event

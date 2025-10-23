@@ -5,13 +5,14 @@ Handles model upload, versioning, listing, and deletion
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 import os
 import uuid as uuid_lib
 
 from app.db.session import get_db
 from app.models.user import User
 from app.models.model import Model
+from app.models.prediction import Prediction
 from app.schemas.model import (
     ModelResponse,
     ModelListResponse,
@@ -285,3 +286,138 @@ async def delete_model(
     db.commit()
     
     return None
+
+
+@router.get("/{model_id}/analytics", response_model=dict)
+async def get_model_analytics(
+    model_id: str,
+    days: int = 7,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get model analytics and usage statistics
+    
+    - **model_id**: Model UUID
+    - **days**: Number of days to analyze (default: 7, max: 90)
+    
+    Requires authentication and ownership
+    
+    Returns prediction count, avg inference time, success rate, and usage trends
+    """
+    # Validate model exists and user has access
+    model = db.query(Model).filter(Model.id == model_id).first()
+    
+    if not model:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Model not found"
+        )
+    
+    if model.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this model's analytics"
+        )
+    
+    # Limit days to reasonable range
+    if days > 90:
+        days = 90
+    
+    # Query predictions for this model
+    predictions_query = db.query(Prediction).filter(Prediction.model_id == model_id)
+    
+    # Overall statistics
+    total_predictions = predictions_query.count()
+    successful_predictions = predictions_query.filter(Prediction.status == "success").count()
+    failed_predictions = predictions_query.filter(Prediction.status == "failed").count()
+    
+    # Calculate success rate
+    success_rate = (successful_predictions / total_predictions * 100) if total_predictions > 0 else 0
+    
+    # Average inference time (only for successful predictions)
+    avg_inference_time = db.query(func.avg(Prediction.inference_time_ms)).filter(
+        Prediction.model_id == model_id,
+        Prediction.status == "success",
+        Prediction.inference_time_ms.isnot(None)
+    ).scalar()
+    
+    # Min and max inference time
+    min_inference_time = db.query(func.min(Prediction.inference_time_ms)).filter(
+        Prediction.model_id == model_id,
+        Prediction.status == "success",
+        Prediction.inference_time_ms.isnot(None)
+    ).scalar()
+    
+    max_inference_time = db.query(func.max(Prediction.inference_time_ms)).filter(
+        Prediction.model_id == model_id,
+        Prediction.status == "success",
+        Prediction.inference_time_ms.isnot(None)
+    ).scalar()
+    
+    # Daily usage trends (last N days)
+    from datetime import datetime, timedelta
+    from sqlalchemy import cast, Date
+    
+    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    
+    daily_stats = db.query(
+        cast(Prediction.created_at, Date).label('date'),
+        func.count(Prediction.id).label('count'),
+        func.avg(Prediction.inference_time_ms).label('avg_time')
+    ).filter(
+        Prediction.model_id == model_id,
+        Prediction.created_at >= cutoff_date
+    ).group_by(
+        cast(Prediction.created_at, Date)
+    ).order_by(
+        cast(Prediction.created_at, Date)
+    ).all()
+    
+    usage_trends = [
+        {
+            "date": str(stat.date),
+            "prediction_count": stat.count,
+            "avg_inference_time_ms": round(float(stat.avg_time), 2) if stat.avg_time else None
+        }
+        for stat in daily_stats
+    ]
+    
+    # Recent errors (last 10)
+    recent_errors = db.query(Prediction).filter(
+        Prediction.model_id == model_id,
+        Prediction.status == "failed"
+    ).order_by(
+        desc(Prediction.created_at)
+    ).limit(10).all()
+    
+    error_list = [
+        {
+            "timestamp": error.created_at.isoformat(),
+            "error_message": error.error_message,
+            "input_data": error.input_data
+        }
+        for error in recent_errors
+    ]
+    
+    return {
+        "success": True,
+        "data": {
+            "model_id": str(model_id),
+            "model_name": model.name,
+            "model_version": model.version,
+            "statistics": {
+                "total_predictions": total_predictions,
+                "successful_predictions": successful_predictions,
+                "failed_predictions": failed_predictions,
+                "success_rate": round(success_rate, 2),
+                "avg_inference_time_ms": round(float(avg_inference_time), 2) if avg_inference_time else None,
+                "min_inference_time_ms": min_inference_time,
+                "max_inference_time_ms": max_inference_time
+            },
+            "usage_trends": usage_trends,
+            "recent_errors": error_list,
+            "analysis_period_days": days
+        }
+    }
+
