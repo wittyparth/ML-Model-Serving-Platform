@@ -38,7 +38,7 @@ class Model(Base):
     # Schema information (stored as JSON)
     input_schema = Column(JSONB, nullable=True)
     output_schema = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)  # Additional flexible metadata
+    model_metadata = Column(JSONB, nullable=True)  # Additional flexible metadata (renamed from 'metadata' to avoid SQLAlchemy conflict)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

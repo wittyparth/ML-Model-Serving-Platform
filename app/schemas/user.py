@@ -1,7 +1,7 @@
 """
 User schemas for request and response validation
 """
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic_test import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 from uuid import UUID

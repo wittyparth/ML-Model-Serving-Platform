@@ -1,7 +1,7 @@
 """
 Model schemas for request and response validation
 """
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic_test import BaseModel, Field, ConfigDict
 from typing import Optional, Dict, Any
 from datetime import datetime
 from uuid import UUID

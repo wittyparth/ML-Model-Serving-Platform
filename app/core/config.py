@@ -3,6 +3,7 @@ Application Configuration
 Loads settings from environment variables
 """
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import Optional
 import secrets
 
@@ -31,7 +32,15 @@ class Settings(BaseSettings):
     CACHE_TTL_SECONDS: int = 3600  # 1 hour
     
     # CORS
-    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    BACKEND_CORS_ORIGINS: list[str] | str = ["http://localhost:3000", "http://localhost:8000"]
+    
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS origins from comma-separated string or list"""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
     
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 100
@@ -40,7 +49,15 @@ class Settings(BaseSettings):
     # File Upload
     MAX_UPLOAD_SIZE_MB: int = 100
     UPLOAD_DIR: str = "models"
-    ALLOWED_MODEL_TYPES: list[str] = ["sklearn"]
+    ALLOWED_MODEL_TYPES: list[str] | str = ["sklearn"]
+    
+    @field_validator("ALLOWED_MODEL_TYPES", mode="before")
+    @classmethod
+    def parse_model_types(cls, v):
+        """Parse model types from comma-separated string or list"""
+        if isinstance(v, str):
+            return [model_type.strip() for model_type in v.split(",") if model_type.strip()]
+        return v
     
     # Model Settings
     MODEL_CACHE_SIZE: int = 5  # Number of models to keep in memory
